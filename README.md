@@ -35,8 +35,8 @@ The MCP server, defined in `src/stk_mcp/server.py`, manages STK interaction and 
 *   **Ansys/AGI STK:** Version 12.x Desktop installed.
 *   **STK Python API:** The `agi.stk12` Python wheel corresponding to your STK installation must be installed. This typically involves:
     *   Locating the wheel file (e.g., `agi.stk12-py3-none-any.whl`) within your STK installation directory (often under `CodeSamples\Automation\Python`).
-    *   Installing it using pip: `pip install path/to/agi.stk12-py3-none-any.whl`
-*   **Project Dependencies:** Requires the `mcp` library (installed via `pip install .`).
+    *   Installing it using pip: `uv pip install path/to/agi.stk12-py3-none-any.whl`
+*   **Project Dependencies:** Requires the `mcp` library (installed via `uv sync`).
 
 ## Installation
 
@@ -49,7 +49,7 @@ The MCP server, defined in `src/stk_mcp/server.py`, manages STK interaction and 
 3.  **Install project dependencies:**
     ```bash
     # Install dependencies defined in pyproject.toml (includes mcp[cli])
-    pip install .
+    uv sync
     ```
 
 ## Usage (MCP Server)

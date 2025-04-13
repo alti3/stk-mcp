@@ -33,7 +33,7 @@ def run():
         print("\nMCP server stopped.")
     except FileNotFoundError:
          print(f"Error: '{sys.executable} -m mcp' command not found.")
-         print("Ensure mcp is installed in your environment (pip install .)")
+         print("Ensure mcp is installed in your environment (uv sync)")
 
 
 if __name__ == "__main__":
