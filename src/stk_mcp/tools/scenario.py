@@ -1,7 +1,7 @@
 from mcp.server.fastmcp import Context
 
 # Use relative imports within the package
-from .. import mcp_server # Import the server instance created in server.py
+from ..app import mcp_server # Import the server instance created in server.py
 from ..stk_logic.core import StkState, stk_available
 from ..stk_logic.scenario import setup_scenario_internal
 
