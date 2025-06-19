@@ -1,11 +1,18 @@
 import os
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Union
+from enum import Enum  # <--- IMPORT Enum
 
 from mcp.server.fastmcp import FastMCP
-from ..cli import StkMode # Import the enum from the CLI
+
+# --- Define shared data types here ---
+
+class StkMode(str, Enum):
+    """Enumeration for selecting the STK execution mode."""
+    DESKTOP = "desktop"
+    ENGINE = "engine"
 
 # --- Attempt STK Imports ---
 stk_available = False

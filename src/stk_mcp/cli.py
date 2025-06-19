@@ -19,13 +19,7 @@ except ImportError:
 # --- Local imports after STK check ---
 if stk_installed:
     from stk_mcp.app import mcp_server
-    from stk_mcp.stk_logic.core import create_stk_lifespan
-
-
-class StkMode(str, Enum):
-    """Enumeration for selecting the STK execution mode."""
-    DESKTOP = "desktop"
-    ENGINE = "engine"
+    from stk_mcp.stk_logic.core import create_stk_lifespan, StkMode # <--- IMPORT StkMode FROM CORE
 
 
 # --- Typer Application Setup ---
