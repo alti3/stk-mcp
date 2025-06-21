@@ -1,10 +1,10 @@
 import os
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
-from dataclasses import dataclass
 from typing import Union
 from enum import Enum  # <--- IMPORT Enum
 
+from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
 # --- Define shared data types here ---
@@ -53,8 +53,7 @@ else: # Linux
 # A type hint for whichever application object is in use
 StkAppType = Union[STKApplication, STKEngine, None]
 
-@dataclass
-class StkState:
+class StkState(BaseModel):
     """Holds the state of the STK application connection."""
     stk_app: StkAppType = None
     stk_root: IAgStkObjectRoot | None = None
