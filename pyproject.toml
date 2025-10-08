@@ -1,12 +1,18 @@
 [project]
 name = "stk-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "STK-MCP, an MCP server allowing LLMs to interact with Ansys/AGI STK - Digital Mission Engineering Software"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "mcp[cli]>=1.6.0",
+    "pydantic>=2.11.7",
+    "typer>=0.15.2",
+    "pywin32>=306; platform_system == 'Windows'",
 ]
+
+[project.scripts]
+stk-mcp = "stk_mcp.cli:app" # New CLI entry point
 
 # Optional: Add pywin32 if needed for clarity, though pip usually handles it on Windows
 # dependencies = [
