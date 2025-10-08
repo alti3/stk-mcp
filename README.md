@@ -124,7 +124,14 @@ Resources:
 
 | Name | Kind | Description | Desktop (Windows) | Engine (Windows) | Engine (Linux) |
 |------|------|-------------|-------------------|------------------|----------------|
-| —    | —    | No resources are currently exposed. | — | — | — |
+| `resource://stk/objects` | Resource | List all objects in the active scenario. Returns JSON records: `{name, type}`. | Yes | Yes | Yes |
+| `resource://stk/objects/{type}` | Resource | List objects filtered by `type` (e.g., `satellite`, `facility`, `place`, `sensor`). Returns JSON records. | Yes | Yes | Yes |
+
+Examples:
+
+- Read all objects: `resource://stk/objects`
+- Read only satellites: `resource://stk/objects/satellite`
+- Read ground locations: `resource://stk/objects/location` (alias for facilities and places)
 
 ## Dependencies
 
