@@ -15,30 +15,28 @@ The MCP application, defined in `src/stk_mcp/app.py`, exposes STK operations as 
 
 ## Features
 
-*   **CLI Entry Point:** A professional command-line interface powered by `Typer`.
-*   **Dual Mode Operation:** Supports both STK Engine (for headless automation on Windows/Linux) and STK Desktop (for visual interaction on Windows).
-*   **OS-Aware:** Automatically detects the operating system and disables STK Desktop mode on non-Windows platforms.
-*   **Dynamic Lifecycle:** The STK application (Engine or Desktop) is started and stopped automatically with the server.
-*   **Tool Discovery:** A built-in `list-tools` command to easily see all available MCP tools.
-*   **Modular Architecture:** Clear separation between the CLI (`cli.py`), MCP application (`app.py`), STK logic (`stk_logic/`), and MCP tools (`tools/`).
+*   CLI entry point powered by `Typer`.
+*   Dual mode operation: STK Engine (Windows/Linux) and STK Desktop (Windows).
+*   OS-aware: Desktop mode auto-disabled on non-Windows platforms.
+*   Managed lifecycle: STK instance is started/stopped with the MCP server.
+*   Tool discovery: `list-tools` command enumerates available MCP tools.
+*   Modular architecture: CLI (`cli.py`), MCP (`app.py`), STK logic (`stk_logic/`), and MCP tools (`tools/`).
 
 ## Prerequisites
 
 *   **Operating System:** Windows or Linux. STK Desktop mode requires Windows.
 *   **Python:** Version 3.12 or higher.
 *   **Ansys/AGI STK:** Version 12.x Desktop or Engine installed.
-*   **STK Python API:** The `agi.stk12` Python wheel corresponding to your STK installation must be installed. This typically involves:
-    *   Locating the wheel file (e.g., `agi.stk12-py3-none-any.whl`) within your STK installation directory (often under `CodeSamples\Automation\Python`).
-    *   Installing it using `uv pip` or `pip`.
+*   **STK Python API:** The `agi.stk12` Python wheel corresponding to your STK installation must be available. Typically found under `CodeSamples\Automation\Python` in your STK install.
 
 ## Installation
 
-1.  **Clone the repository:**
+1.  Clone the repository
     ```bash
     git clone <repository-url>
     cd stk-mcp
     ```
-2.  **Create and activate a virtual environment:**
+2.  Create and activate a virtual environment
     ```bash
     # Create the virtual environment
     uv venv
@@ -49,15 +47,18 @@ The MCP application, defined in `src/stk_mcp/app.py`, exposes STK operations as 
     # On Linux (in bash/zsh):
     source .venv/bin/activate
     ```
-3.  **Install STK Python API:**
-    Install the wheel file from your STK installation.
+3.  Add dependencies with uv (preferred)
+    - Add the STK Python wheel from your STK installation (local file):
     ```bash
-    uv pip install "path/to/your/stk/CodeSamples/Automation/Python/agi.stk12-py3-none-any.whl"
+    uv add ./agi.stk12-12.10.0-py3-none-any.whl
+    # or: uv add path/to/your/STK/CodeSamples/Automation/Python/agi.stk12-*.whl
+    
+    # Windows only: COM bridge for Desktop automation
+    uv add "pywin32; platform_system == 'Windows'"
     ```
-4.  **Install the project in editable mode:**
-    This command installs all dependencies from `pyproject.toml` and makes the `stk-mcp` command available in your terminal.
+4.  Sync the environment (installs deps from `pyproject.toml`)
     ```bash
-    uv pip install -e .
+    uv sync
     ```
 
 ## Usage
@@ -66,25 +67,26 @@ This project is a command-line application. Ensure your virtual environment is a
 
 ### Listing Available Tools
 
-To see a list of all MCP tools the server can expose, run:
 ```bash
-stk-mcp list-tools
+uv run -m stk_mcp.cli list-tools
 ```
-This will print a table of tool names and their functions.
+Prints a table of tool names and their descriptions.
 
 ### Running the MCP Server
 
 Use the `run` command to start the MCP server. The server will automatically start and manage an STK instance.
 
-**1. Run with STK Engine (Recommended for automation, works on Windows/Linux):**
+Run with `uv run` so you don’t need to install the package into site-packages.
+
+**1) STK Engine (recommended for automation, Windows/Linux):**
 ```bash
-stk-mcp run --mode engine
+uv run -m stk_mcp.cli run --mode engine
 ```
 
-**2. Run with STK Desktop (Windows Only, shows the GUI):**
-Ensure STK Desktop is closed, as the server will launch and manage its own instance.
+**2) STK Desktop (Windows only, shows GUI):**
+Ensure STK Desktop is closed; the server will launch and manage its own instance.
 ```bash
-stk-mcp run --mode desktop
+uv run -m stk_mcp.cli run --mode desktop
 ```
 
 The server will start, initialize STK, and listen for MCP connections on `http://127.0.0.1:8765` by default.
@@ -100,22 +102,39 @@ Once the server is running, you can connect to it using any MCP client, such as 
 
 1.  Open the MCP Inspector URL provided in the console (e.g., `http://127.0.0.1:8765`).
 2.  Find the "STK Control" server in the list.
-3.  Navigate to the "Tools" section to execute `setup_scenario` and `create_satellite`.
+3.  Use the "Tools" section to execute `setup_scenario`, `create_location`, and `create_satellite`.
 
 ### Stopping the Server
 Press `Ctrl+C` in the terminal where the server is running. The lifecycle manager will automatically close the STK Engine or Desktop instance.
 
-## MCP Tools Available
+## MCP Tools and Resources
 
-*   **`setup_scenario`**: Creates/Configures an STK Scenario.
-*   **`create_satellite`**: Creates or modifies an STK satellite in the active scenario.
+The server exposes the following MCP tools/resources.
+
+| Name             | Kind     | Description                                                                                   | Desktop (Windows) | Engine (Windows) | Engine (Linux) |
+|------------------|----------|-----------------------------------------------------------------------------------------------|-------------------|------------------|----------------|
+| `setup_scenario` | Tool     | Create/configure an STK Scenario; sets time period and rewinds animation.                    | Yes               | Yes              | Yes            |
+| `create_location`| Tool     | Create/update a `Facility` (default) or `Place` at latitude/longitude/altitude (km).         | Yes               | Yes              | Yes            |
+| `create_satellite`| Tool    | Create/configure a satellite from apogee/perigee (km), RAAN, and inclination; TwoBody prop.  | Yes               | Yes              | No             |
+
+Notes:
+- `create_satellite` on Linux Engine is not yet supported because it relies on COM-specific casts; a Connect-based fallback is planned.
+
+Resources:
+
+| Name | Kind | Description | Desktop (Windows) | Engine (Windows) | Engine (Linux) |
+|------|------|-------------|-------------------|------------------|----------------|
+| —    | —    | No resources are currently exposed. | — | — | — |
 
 ## Dependencies
 
-*   `agi.stk12`: For interacting with STK (Requires manual installation from STK).
-*   `mcp[cli]>=1.6.0`: Model Context Protocol library.
-*   `typer[all]>=0.12.0`: For building the command-line interface.
-*   `pywin32`: Required for STK Desktop COM interaction on Windows.
+Managed with `uv`:
+
+*   `agi.stk12` (local wheel from your STK install)
+*   `mcp[cli]>=1.6.0`
+*   `typer>=0.15.2`
+*   `pydantic>=2.11.7`
+*   `pywin32` (Windows only)
 
 ## Contributing
 
