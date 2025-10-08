@@ -4,6 +4,7 @@ import logging
 from typing import Literal
 
 from .core import stk_available, IAgStkObjectRoot, IAgScenario
+from .utils import timed_operation, safe_stk_command
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ except Exception:
     enums_available = False
 
 
+@timed_operation
 def create_location_internal(
     stk_root: IAgStkObjectRoot,
     scenario: IAgScenario,
@@ -63,13 +65,13 @@ def create_location_internal(
             # Most STK Python wrappers surface AssignGeodetic directly
             obj.Position.AssignGeodetic(latitude_deg, longitude_deg, altitude_km)
         except Exception:
-            # Fallback to STK Connect: Geodetic lat lon alt km
+            # Fallback to STK Connect with retry: Geodetic lat lon alt km
             class_name = "Facility" if kind == "facility" else "Place"
             cmd = (
                 f"SetPosition */{class_name}/{name} Geodetic "
                 f"{latitude_deg} {longitude_deg} {altitude_km} km"
             )
-            stk_root.ExecuteCommand(cmd)
+            safe_stk_command(stk_root, cmd)
 
         action = "created" if created else "updated"
         return True, f"Successfully {action} {kind}: '{name}'", obj

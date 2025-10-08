@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import logging
 from .core import stk_available, IAgStkObjectRoot, IAgScenario
+from .utils import timed_operation, safe_stk_command
 
 logger = logging.getLogger(__name__)
 
+@timed_operation
 def setup_scenario_internal(
     stk_root: IAgStkObjectRoot,
     scenario_name: str,
@@ -46,8 +48,8 @@ def setup_scenario_internal(
         # Optional: Maximize windows
         try:
             logger.info("  Maximizing STK windows...")
-            stk_root.ExecuteCommand('Application / Raise')
-            stk_root.ExecuteCommand('Application / Maximize')
+            safe_stk_command(stk_root, 'Application / Raise')
+            safe_stk_command(stk_root, 'Application / Maximize')
             # Consider checking for 3D window existence if needed
             # stk_root.ExecuteCommand('Window3D * Maximize')
         except Exception as cmd_e:

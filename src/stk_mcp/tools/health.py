@@ -4,7 +4,8 @@ from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.exceptions import ResourceError
 
 from ..app import mcp_server
-from ..stk_logic.core import StkState, stk_available, STK_LOCK
+from ..stk_logic.core import StkState, STK_LOCK
+from ..stk_logic.decorators import require_stk_resource
 from ..stk_logic.objects import list_objects_internal
 
 logger = logging.getLogger(__name__)
@@ -19,11 +20,10 @@ logger = logging.getLogger(__name__)
     ),
     mime_type="application/json",
 )
+@require_stk_resource
 def health(ctx: Context):
     lifespan_ctx: StkState | None = ctx.request_context.lifespan_context
 
-    if not stk_available:
-        raise ResourceError("STK is not available on this system or failed to load.")
     if not lifespan_ctx:
         raise ResourceError("No lifespan context set.")
 
@@ -50,4 +50,3 @@ def health(ctx: Context):
         "scenario": scenario_name,
         "counts": dict(counts),
     }
-

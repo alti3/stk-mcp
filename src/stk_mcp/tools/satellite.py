@@ -3,12 +3,14 @@ from mcp.server.fastmcp import Context
 
 # Use relative imports within the package
 from ..app import mcp_server  # Import the server instance
-from ..stk_logic.core import StkState, stk_available, STK_LOCK
+from ..stk_logic.core import StkState, STK_LOCK
+from ..stk_logic.decorators import require_stk_tool
 from ..stk_logic.satellite import create_satellite_internal
 
 logger = logging.getLogger(__name__)
 
 @mcp_server.tool() # Decorate with the server instance
+@require_stk_tool
 def create_satellite(
     ctx: Context,
     name: str,
@@ -31,14 +33,13 @@ def create_satellite(
 
     Returns:
         A string indicating success or failure.
+
+    Examples:
+        >>> create_satellite(ctx, "ISS", apogee_alt_km=420, perigee_alt_km=410, raan_deg=51.6, inclination_deg=51.6)
+        "Successfully created/configured satellite: 'ISS'"
     """
     logger.info("MCP Tool: create_satellite '%s'", name)
     lifespan_ctx: StkState | None = ctx.request_context.lifespan_context
-
-    if not stk_available:
-        return "Error: STK is not available on this system or failed to load."
-    if not lifespan_ctx or not lifespan_ctx.stk_root:
-        return "Error: STK Root object not available. STK might not be running or initialized properly via lifespan."
 
     # Get the current scenario from the STK root object
     try:

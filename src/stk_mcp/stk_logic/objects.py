@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 
 from .core import stk_available, IAgStkObjectRoot
+from .utils import safe_exec_lines, timed_operation
 
 logger = logging.getLogger(__name__)
 
@@ -13,13 +14,7 @@ def _exec_lines(stk_root: IAgStkObjectRoot, cmd: str) -> list[str]:
     Execute an STK Connect command and return the result lines.
     Safe helper that returns an empty list on failure.
     """
-    try:
-        res = stk_root.ExecuteCommand(cmd)
-        # Typical AgExecCmdResult supports Count/Item(index)
-        return [res.Item(i) for i in range(res.Count)]
-    except Exception:
-        logger.debug("Connect command failed or returned no result: %s", cmd)
-        return []
+    return safe_exec_lines(stk_root, cmd)
 
 
 def _parse_all_instance_names(lines: list[str]) -> list[tuple[str, str]]:
@@ -119,6 +114,7 @@ def _normalize_filter(filter_type: str) -> set[str] | None:
     return mapping.get(t)
 
 
+@timed_operation
 def list_objects_internal(
     stk_root: IAgStkObjectRoot,
     filter_type: Optional[str] = None,

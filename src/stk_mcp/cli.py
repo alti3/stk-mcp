@@ -22,6 +22,9 @@ except ImportError:
 # --- Local imports (safe regardless of STK availability) ---
 from stk_mcp.app import mcp_server
 from stk_mcp.stk_logic.core import create_stk_lifespan, StkMode  # type: ignore
+from stk_mcp.stk_logic.config import get_config
+from stk_mcp.stk_logic.logging_config import configure_logging
+import anyio
 
 
 # --- Typer Application Setup ---
@@ -41,8 +44,8 @@ def _validate_desktop_mode(mode: StkMode):
 
 @app.command()
 def run(
-    host: str = typer.Option("127.0.0.1", help="The host to bind the server to."),
-    port: int = typer.Option(8765, help="The port to run the server on."),
+    host: str = typer.Option(None, help="The host to bind the server to."),
+    port: int = typer.Option(None, help="The port to run the server on."),
     mode: StkMode = typer.Option(
         StkMode.ENGINE if os.name != "nt" else StkMode.DESKTOP,
         "--mode", "-m",
@@ -63,10 +66,17 @@ def run(
         raise typer.Exit(code=1)
         
     # Configure logging
-    level = getattr(logging, log_level.upper(), logging.INFO)
-    logging.basicConfig(level=level, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    cfg = get_config()
+    level = log_level or cfg.log_level
+    configure_logging(level)
 
-    console.print(f"[green]Starting STK-MCP server in[/] [bold cyan]{mode.value}[/] [green]mode...[/]")
+    # Resolve host/port from config if not provided
+    host = host or cfg.default_host
+    port = int(port or cfg.default_port)
+
+    console.print(
+        f"[green]Starting STK-MCP server in[/] [bold cyan]{mode.value}[/] [green]mode on {host}:{port}...[/]"
+    )
 
     # Dynamically create the lifespan based on the selected mode
     stk_lifespan_manager = create_stk_lifespan(mode)
@@ -94,13 +104,14 @@ def list_tools():
     table.add_column("Tool Name", style="cyan", no_wrap=True)
     table.add_column("Description", style="magenta")
 
-    if not mcp_server.router.tools:
+    tools = anyio.run(mcp_server.list_tools)
+    if not tools:
         console.print("[yellow]No tools have been registered on the server.[/yellow]")
         return
-        
-    for name, tool in sorted(mcp_server.router.tools.items()):
-        description = tool.description or "No description provided."
-        table.add_row(name, description.strip())
+
+    for t in tools:
+        description = (t.description or "No description provided.").strip()
+        table.add_row(t.name, description)
 
     console.print(table)
 

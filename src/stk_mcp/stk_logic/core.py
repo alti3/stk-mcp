@@ -8,6 +8,7 @@ from enum import Enum  # <--- IMPORT Enum
 from threading import Lock
 
 from pydantic import BaseModel
+from typing import NamedTuple, Optional
 from mcp.server.fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
@@ -72,6 +73,13 @@ class StkState(BaseModel):
 
 # Global lock to serialize all STK access across tools/resources
 STK_LOCK: Lock = Lock()
+
+
+class OperationResult(NamedTuple):
+    """Standard result type for STK operations."""
+    success: bool
+    message: str
+    data: Optional[dict] = None
 
 def create_stk_lifespan(mode: StkMode):
     """

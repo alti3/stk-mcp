@@ -3,17 +3,20 @@ from mcp.server.fastmcp import Context
 
 # Use relative imports within the package
 from ..app import mcp_server  # Import the server instance created in server.py
-from ..stk_logic.core import StkState, stk_available, STK_LOCK
+from ..stk_logic.core import StkState, STK_LOCK
+from ..stk_logic.decorators import require_stk_tool
+from ..stk_logic.config import get_config
 from ..stk_logic.scenario import setup_scenario_internal
 
 logger = logging.getLogger(__name__)
 
 @mcp_server.tool() # Decorate with the server instance
+@require_stk_tool
 def setup_scenario(
     ctx: Context,
-    scenario_name: str = "MCP_STK_Scenario",
-    start_time: str = "20 Jan 2020 17:00:00.000", # Default UTCG start
-    duration_hours: float = 48.0 # Default duration
+    scenario_name: str | None = None,
+    start_time: str | None = None, # Default UTCG start
+    duration_hours: float | None = None # Default duration
 ) -> str:
     """
     MCP Tool: Creates/Configures an STK Scenario. Closes any existing scenario first.
@@ -30,12 +33,15 @@ def setup_scenario(
     logger.info("MCP Tool: setup_scenario '%s'", scenario_name)
     lifespan_ctx: StkState | None = ctx.request_context.lifespan_context
 
-    if not stk_available:
-        return "Error: STK is not available on this system or failed to load."
-    if not lifespan_ctx or not lifespan_ctx.stk_root:
-        return "Error: STK Root object not available. STK might not be running or initialized properly via lifespan."
-
     # Basic input validation
+    cfg = get_config()
+    if scenario_name is None:
+        scenario_name = cfg.default_scenario_name
+    if start_time is None:
+        start_time = cfg.default_start_time
+    if duration_hours is None:
+        duration_hours = cfg.default_duration_hours
+
     if not scenario_name or not isinstance(scenario_name, str):
         return "Error: scenario_name must be a non-empty string."
     if duration_hours <= 0:

@@ -12,6 +12,8 @@ dependencies = [
     "rich>=13.7",
     "pywin32>=306; platform_system == 'Windows'",
     "agi-stk12",
+    "pydantic-settings>=2.10.1",
+    "tenacity>=9.1.2",
 ]
 
 [project.scripts]

@@ -2,6 +2,8 @@ import os
 import logging
 from . import core as core
 from .core import IAgStkObjectRoot, IAgScenario
+from .utils import timed_operation
+from .config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +33,10 @@ if core.stk_available and os.name == 'nt':
         logger.error("Error importing win32com or STK enums: %s", e)
 
 
-# Constants
-EARTH_RADIUS_KM = 6378.137
+cfg = get_config()
+EARTH_RADIUS_KM = cfg.earth_radius_km
 
+@timed_operation
 def create_satellite_internal(
     stk_root: IAgStkObjectRoot,  # Although not directly used, good for context
     scenario: IAgScenario,

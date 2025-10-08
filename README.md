@@ -127,12 +127,43 @@ Resources:
 | `resource://stk/objects` | Resource | List all objects in the active scenario. Returns JSON records: `{name, type}`. | Yes | Yes | Yes |
 | `resource://stk/objects/{type}` | Resource | List objects filtered by `type` (e.g., `satellite`, `facility`, `place`, `sensor`). Returns JSON records. | Yes | Yes | Yes |
 | `resource://stk/health` | Resource | Report basic state: mode, scenario name, and object counts. | Yes | Yes | Yes |
+| `resource://stk/analysis/access/{object1}/{object2}` | Resource | Compute access intervals between two objects. Provide paths like `Satellite/SatA` and `Facility/FacB` (with or without leading `*/`). | Yes | Yes | Yes |
+| `resource://stk/reports/lla/{satellite}` | Resource | Return satellite LLA ephemeris over the scenario start/stop interval. Provide path like `Satellite/SatA` (with or without leading `*/`). | Yes | Yes | Yes |
 
 Examples:
 
 - Read all objects: `resource://stk/objects`
 - Read only satellites: `resource://stk/objects/satellite`
 - Read ground locations: `resource://stk/objects/location` (alias for facilities and places)
+
+Access and LLA examples:
+
+- Compute access: `resource://stk/analysis/access/Satellite/ISS/Facility/Boulder`
+- Get ISS LLA (60 s): `resource://stk/reports/lla/Satellite/ISS` (optional `step_sec` argument)
+
+## Configuration & Logging
+
+Configuration is centralized in `src/stk_mcp/stk_logic/config.py` using `pydantic-settings`.
+Defaults can be overridden with environment variables (prefix `STK_MCP_`).
+
+- `STK_MCP_DEFAULT_HOST` (default `127.0.0.1`)
+- `STK_MCP_DEFAULT_PORT` (default `8765`)
+- `STK_MCP_LOG_LEVEL` (default `INFO`)
+- `STK_MCP_DEFAULT_SCENARIO_NAME` (default `MCP_STK_Scenario`)
+- `STK_MCP_DEFAULT_START_TIME` (default `20 Jan 2020 17:00:00.000`)
+- `STK_MCP_DEFAULT_DURATION_HOURS` (default `48.0`)
+
+Logging is standardized via `src/stk_mcp/stk_logic/logging_config.py`. The CLI uses
+this configuration, producing structured logs with timestamps, levels, and context.
+
+## Implementation Notes
+
+- STK access is serialized with a global lock to avoid concurrency issues.
+- Common STK-availability checks are handled via decorators in
+  `src/stk_mcp/stk_logic/decorators.py` (`@require_stk_tool` and `@require_stk_resource`).
+- STK Connect commands that may be transiently flaky are executed with retry logic
+  (`tenacity`) in `src/stk_mcp/stk_logic/utils.py` (`safe_stk_command`).
+- Long-running internal operations are timed with `@timed_operation` for diagnostics.
 
 ## Dependencies
 

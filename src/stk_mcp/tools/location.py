@@ -2,13 +2,15 @@ import logging
 from mcp.server.fastmcp import Context
 
 from ..app import mcp_server
-from ..stk_logic.core import StkState, stk_available, STK_LOCK
+from ..stk_logic.core import StkState, STK_LOCK
+from ..stk_logic.decorators import require_stk_tool
 from ..stk_logic.location import create_location_internal
 
 logger = logging.getLogger(__name__)
 
 
 @mcp_server.tool()
+@require_stk_tool
 def create_location(
     ctx: Context,
     name: str,
@@ -30,13 +32,12 @@ def create_location(
 
     Returns:
         Status message indicating success or error details.
+
+    Examples:
+        >>> create_location(ctx, name="Boulder", latitude_deg=40.015, longitude_deg=-105.27, altitude_km=1.656, kind="facility")
+        "Successfully created facility: 'Boulder'"
     """
     lifespan_ctx: StkState | None = ctx.request_context.lifespan_context
-
-    if not stk_available:
-        return "Error: STK is not available on this system or failed to load."
-    if not lifespan_ctx or not lifespan_ctx.stk_root:
-        return "Error: STK Root object not available. Initialize via 'run' first."
 
     try:
         scenario = lifespan_ctx.stk_root.CurrentScenario
