@@ -3,6 +3,14 @@ revision = 3
 requires-python = ">=3.12"
 
 [[package]]
+name = "agi-stk12"
+version = "12.10.0"
+source = { path = "agi.stk12-12.10.0-py3-none-any.whl" }
+wheels = [
+    { filename = "agi_stk12-12.10.0-py3-none-any.whl", hash = "sha256:cc28f0f09869e311ed68406ae73004e436bff589e8e79ecabd95413995768ac6" },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -463,18 +471,26 @@ wheels = [
 [[package]]
 name = "stk-mcp"
 version = "0.2.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
+    { name = "agi-stk12" },
     { name = "mcp", extra = ["cli"] },
     { name = "pydantic" },
+    { name = "pywin32", marker = "sys_platform == 'win32'" },
+    { name = "rich" },
     { name = "typer" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "agi-stk12", path = "agi.stk12-12.10.0-py3-none-any.whl" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.6.0" },
     { name = "pydantic", specifier = ">=2.11.7" },
+    { name = "pywin32", marker = "sys_platform == 'win32'", specifier = ">=306" },
+    { name = "rich", specifier = ">=13.7" },
     { name = "typer", specifier = ">=0.15.2" },
+    { name = "uvicorn", specifier = ">=0.30" },
 ]
 
 [[package]]

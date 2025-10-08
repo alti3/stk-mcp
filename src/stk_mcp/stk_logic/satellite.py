@@ -1,13 +1,18 @@
 import os
-from .core import stk_available, IAgStkObjectRoot, IAgScenario
+import logging
+from . import core as core
+from .core import IAgStkObjectRoot, IAgScenario
 
-# Import STK Objects specific to satellite creation if available
+logger = logging.getLogger(__name__)
+
+# Import STK Objects specific to satellite creation if available (Windows Desktop/Engine)
 AgESTKObjectType = None
 AgEVePropagatorType = None
 AgEClassicalLocation = None
 win32com_client = None
+satellite_capable = False
 
-if stk_available and os.name == 'nt':
+if core.stk_available and os.name == 'nt':
     try:
         from agi.stk12.stkobjects import (
             AgESTKObjectType as AgESTKObjectTypeImport,
@@ -19,25 +24,24 @@ if stk_available and os.name == 'nt':
         AgEVePropagatorType = AgEVePropagatorTypeImport
         AgEClassicalLocation = AgEClassicalLocationImport
         win32com_client = win32com_client_import
+        satellite_capable = True
     except ImportError:
-        print("Could not import specific STK object enums for satellite creation.")
-        stk_available = False # Mark as unavailable if critical parts missing
+        logger.warning("Could not import STK COM types for satellite creation (Windows only feature).")
     except Exception as e:
-        print(f"Error importing win32com or specific STK enums: {e}")
-        stk_available = False
+        logger.error("Error importing win32com or STK enums: %s", e)
 
 
 # Constants
 EARTH_RADIUS_KM = 6378.137
 
 def create_satellite_internal(
-    stk_root: IAgStkObjectRoot, # Although not directly used, good for context
+    stk_root: IAgStkObjectRoot,  # Although not directly used, good for context
     scenario: IAgScenario,
     name: str,
     apogee_alt_km: float,
     perigee_alt_km: float,
     raan_deg: float,
-    inclination_deg: float
+    inclination_deg: float,
 ):
     """
     Internal logic to create/configure an STK satellite.
@@ -49,13 +53,12 @@ def create_satellite_internal(
         ValueError: If input parameters are invalid (e.g., apogee < perigee).
         Exception: For COM or other STK errors.
     """
-    if not stk_available or not scenario or win32com_client is None:
-         raise RuntimeError("STK modules, active scenario, or win32com not available/initialized.")
+    if not core.stk_available or not scenario or win32com_client is None or not satellite_capable:
+        raise RuntimeError("STK modules, active scenario, or win32com not available/initialized.")
     if AgESTKObjectType is None or AgEVePropagatorType is None or AgEClassicalLocation is None:
-         raise RuntimeError("Required STK Object Enums not imported.")
+        raise RuntimeError("Required STK Object Enums not imported.")
 
-
-    print(f"  Attempting internal satellite creation/configuration: {name}")
+    logger.info("  Attempting internal satellite creation/configuration: %s", name)
 
     if apogee_alt_km < perigee_alt_km:
         raise ValueError("Apogee altitude cannot be less than Perigee altitude.")
@@ -67,24 +70,24 @@ def create_satellite_internal(
     denominator = radius_apogee_km + radius_perigee_km
     eccentricity = 0.0 if denominator == 0 else (radius_apogee_km - radius_perigee_km) / denominator
 
-    print(f"    Calculated Semi-Major Axis (a): {semi_major_axis_km:.3f} km")
-    print(f"    Calculated Eccentricity (e): {eccentricity:.6f}")
+    logger.debug("    Calculated Semi-Major Axis (a): %.3f km", semi_major_axis_km)
+    logger.debug("    Calculated Eccentricity (e): %.6f", eccentricity)
 
     # --- Get or Create Satellite Object ---
     scenario_children = scenario.Children
     satellite = None
     if not scenario_children.Contains(AgESTKObjectType.eSatellite, name):
-        print(f"    Creating new Satellite object: {name}")
+        logger.info("    Creating new Satellite object: %s", name)
         satellite = scenario_children.New(AgESTKObjectType.eSatellite, name)
     else:
-        print(f"    Satellite '{name}' already exists. Getting reference.")
+        logger.info("    Satellite '%s' already exists. Getting reference.", name)
         satellite = scenario_children.Item(name)
 
     if satellite is None:
          raise Exception(f"Failed to create or retrieve satellite object '{name}'.")
 
     # --- Set Propagator to TwoBody ---
-    print("    Setting propagator to TwoBody...")
+    logger.info("    Setting propagator to TwoBody...")
     satellite.SetPropagatorType(AgEVePropagatorType.ePropagatorTwoBody)
     propagator = satellite.Propagator
 
@@ -96,7 +99,7 @@ def create_satellite_internal(
     argp_deg = 0.0 # Assumed
     true_anom_deg = 0.0 # Assumed (starts at perigee)
 
-    print(f"    Assigning Classical Elements (J2000):")
+    logger.info("    Assigning Classical Elements (J2000):")
     # (Print statements omitted for brevity, add back if desired)
 
     orbit_state = propagator_twobody.InitialState.Representation
@@ -112,9 +115,9 @@ def create_satellite_internal(
         raise Exception("Failed to cast orbit state to IAgOrbitStateClassical.")
 
     # --- Propagate the Orbit ---
-    print("    Propagating orbit...")
+    logger.info("    Propagating orbit...")
     propagator_twobody.Propagate()
 
-    print(f"  Internal satellite configuration for '{name}' complete.")
+    logger.info("  Internal satellite configuration for '%s' complete.", name)
     # Return success flag, message, and the object
     return True, f"Successfully created/configured satellite: '{satellite.InstanceName}'", satellite 

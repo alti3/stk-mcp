@@ -1,9 +1,12 @@
+import logging
 from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.exceptions import ResourceError
 
 from ..app import mcp_server
-from ..stk_logic.core import StkState, stk_available
+from ..stk_logic.core import StkState, stk_available, STK_LOCK
 from ..stk_logic.objects import list_objects_internal
+
+logger = logging.getLogger(__name__)
 
 
 @mcp_server.resource(
@@ -28,7 +31,8 @@ def list_objects(ctx: Context):
         raise ResourceError("STK Root object not available. Initialize via server lifespan.")
 
     try:
-        return list_objects_internal(lifespan_ctx.stk_root)
+        with STK_LOCK:
+            return list_objects_internal(lifespan_ctx.stk_root)
     except Exception as e:
         raise ResourceError(str(e))
 
@@ -55,7 +59,8 @@ def list_objects_by_type(ctx: Context, object_type: str):
         raise ResourceError("STK Root object not available. Initialize via server lifespan.")
 
     try:
-        objects = list_objects_internal(lifespan_ctx.stk_root, filter_type=object_type)
+        with STK_LOCK:
+            objects = list_objects_internal(lifespan_ctx.stk_root, filter_type=object_type)
         # If the filter was unrecognized, return empty with a hint instead of throwing
         if not objects:
             # We still return JSON for consistency
@@ -63,4 +68,3 @@ def list_objects_by_type(ctx: Context, object_type: str):
         return objects
     except Exception as e:
         raise ResourceError(str(e))
-

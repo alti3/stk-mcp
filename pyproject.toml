@@ -8,7 +8,10 @@ dependencies = [
     "mcp[cli]>=1.6.0",
     "pydantic>=2.11.7",
     "typer>=0.15.2",
+    "uvicorn>=0.30",
+    "rich>=13.7",
     "pywin32>=306; platform_system == 'Windows'",
+    "agi-stk12",
 ]
 
 [project.scripts]
@@ -19,3 +22,10 @@ stk-mcp = "stk_mcp.cli:app" # New CLI entry point
 #     "mcp[cli]>=1.6.0",
 #     "pywin32>=306; sys_platform == 'win32'" # Example conditional dependency
 # ]
+
+[build-system]
+requires = ["uv-build>=0.4.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+agi-stk12 = { path = "agi.stk12-12.10.0-py3-none-any.whl" }

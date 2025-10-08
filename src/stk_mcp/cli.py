@@ -1,25 +1,27 @@
 import os
 import sys
+import logging
 import uvicorn
 import typer
-from enum import Enum
 from rich.console import Console
 from rich.table import Table
 
 # --- Check for STK installation early ---
 stk_installed = False
 try:
-    from agi.stk12.stkengine import STKEngine
-    from agi.stk12.stkdesktop import STKDesktop
+    from agi.stk12.stkengine import STKEngine  # noqa: F401
+    from agi.stk12.stkdesktop import STKDesktop  # noqa: F401
     stk_installed = True
 except ImportError:
-    print("Warning: Ansys/AGI STK Python API not found. Please install it to use this application.", file=sys.stderr)
+    print(
+        "Warning: Ansys/AGI STK Python API not found. Please install it to use this application.",
+        file=sys.stderr,
+    )
     # Allow Typer to still show help, but commands will fail.
 
-# --- Local imports after STK check ---
-if stk_installed:
-    from stk_mcp.app import mcp_server
-    from stk_mcp.stk_logic.core import create_stk_lifespan, StkMode # <--- IMPORT StkMode FROM CORE
+# --- Local imports (safe regardless of STK availability) ---
+from stk_mcp.app import mcp_server
+from stk_mcp.stk_logic.core import create_stk_lifespan, StkMode  # type: ignore
 
 
 # --- Typer Application Setup ---
@@ -48,6 +50,10 @@ def run(
         help="STK execution mode. 'desktop' is only available on Windows.",
         callback=_validate_desktop_mode,
     ),
+    log_level: str = typer.Option(
+        "info",
+        help="Log level: critical, error, warning, info, debug",
+    ),
 ):
     """
     Run the STK-MCP server.
@@ -56,6 +62,10 @@ def run(
         console.print("[bold red]Error:[/] Cannot run server. STK Python API is not installed.")
         raise typer.Exit(code=1)
         
+    # Configure logging
+    level = getattr(logging, log_level.upper(), logging.INFO)
+    logging.basicConfig(level=level, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
     console.print(f"[green]Starting STK-MCP server in[/] [bold cyan]{mode.value}[/] [green]mode...[/]")
 
     # Dynamically create the lifespan based on the selected mode

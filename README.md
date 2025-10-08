@@ -126,6 +126,7 @@ Resources:
 |------|------|-------------|-------------------|------------------|----------------|
 | `resource://stk/objects` | Resource | List all objects in the active scenario. Returns JSON records: `{name, type}`. | Yes | Yes | Yes |
 | `resource://stk/objects/{type}` | Resource | List objects filtered by `type` (e.g., `satellite`, `facility`, `place`, `sensor`). Returns JSON records. | Yes | Yes | Yes |
+| `resource://stk/health` | Resource | Report basic state: mode, scenario name, and object counts. | Yes | Yes | Yes |
 
 Examples:
 
@@ -139,9 +140,15 @@ Managed with `uv`:
 
 *   `agi.stk12` (local wheel from your STK install)
 *   `mcp[cli]>=1.6.0`
+*   `uvicorn>=0.30` (explicit for CLI server)
+*   `rich>=13.7` (CLI table output)
 *   `typer>=0.15.2`
 *   `pydantic>=2.11.7`
 *   `pywin32` (Windows only)
+
+Notes:
+- On macOS (Darwin), STK Engine/Desktop are not supported. The server will start but STK-dependent tools/resources are unavailable.
+- The server serializes STK access via a global lock to avoid concurrency issues with COM/Engine calls.
 
 ## Contributing
 

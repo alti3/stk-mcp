@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Optional
 
 from .core import stk_available, IAgStkObjectRoot
+
+logger = logging.getLogger(__name__)
 
 
 def _exec_lines(stk_root: IAgStkObjectRoot, cmd: str) -> list[str]:
@@ -15,6 +18,7 @@ def _exec_lines(stk_root: IAgStkObjectRoot, cmd: str) -> list[str]:
         # Typical AgExecCmdResult supports Count/Item(index)
         return [res.Item(i) for i in range(res.Count)]
     except Exception:
+        logger.debug("Connect command failed or returned no result: %s", cmd)
         return []
 
 
@@ -164,4 +168,3 @@ def list_objects_internal(
             add_from_cmd(f"AllInstanceNames */{parent}/*/Sensor", expected_type="Sensor")
 
     return results
-

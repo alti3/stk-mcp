@@ -1,8 +1,11 @@
+import logging
 from mcp.server.fastmcp import Context
 
 from ..app import mcp_server
-from ..stk_logic.core import StkState, stk_available
+from ..stk_logic.core import StkState, stk_available, STK_LOCK
 from ..stk_logic.location import create_location_internal
+
+logger = logging.getLogger(__name__)
 
 
 @mcp_server.tool()
@@ -42,14 +45,24 @@ def create_location(
     except Exception as e:
         return f"Error: Could not access current scenario: {e}"
 
-    ok, msg, _ = create_location_internal(
-        stk_root=lifespan_ctx.stk_root,
-        scenario=scenario,
-        name=name,
-        latitude_deg=latitude_deg,
-        longitude_deg=longitude_deg,
-        altitude_km=altitude_km,
-        kind=kind,
-    )
-    return msg
+    # Input validation
+    if not (-90.0 <= latitude_deg <= 90.0):
+        return "Error: latitude_deg must be within [-90, 90] degrees."
+    if not (-180.0 <= longitude_deg <= 180.0):
+        return "Error: longitude_deg must be within [-180, 180] degrees."
+    if altitude_km < -0.5:
+        return "Error: altitude_km must be >= -0.5 km."
+    if kind.lower() not in ("facility", "place"):
+        return "Error: kind must be 'facility' or 'place'."
 
+    with STK_LOCK:
+        ok, msg, _ = create_location_internal(
+            stk_root=lifespan_ctx.stk_root,
+            scenario=scenario,
+            name=name,
+            latitude_deg=latitude_deg,
+            longitude_deg=longitude_deg,
+            altitude_km=altitude_km,
+            kind=kind,
+        )
+    return msg

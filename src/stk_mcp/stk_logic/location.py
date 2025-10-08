@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Literal
 
 from .core import stk_available, IAgStkObjectRoot, IAgScenario
+
+logger = logging.getLogger(__name__)
 
 try:
     # Enums are available on both Desktop and Engine
@@ -71,5 +74,5 @@ def create_location_internal(
         action = "created" if created else "updated"
         return True, f"Successfully {action} {kind}: '{name}'", obj
     except Exception as e:
+        logger.error("Error creating %s '%s': %s", kind, name, e)
         return False, f"Error creating {kind} '{name}': {e}", None
-
