@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 AgESTKObjectType = None
 AgEVePropagatorType = None
 AgEClassicalLocation = None
-win32com_client = None
 satellite_capable = False
 
 if core.stk_available and os.name == 'nt':
@@ -21,16 +20,14 @@ if core.stk_available and os.name == 'nt':
             AgEVePropagatorType as AgEVePropagatorTypeImport,
             AgEClassicalLocation as AgEClassicalLocationImport,
         )
-        import win32com.client as win32com_client_import
         AgESTKObjectType = AgESTKObjectTypeImport
         AgEVePropagatorType = AgEVePropagatorTypeImport
         AgEClassicalLocation = AgEClassicalLocationImport
-        win32com_client = win32com_client_import
         satellite_capable = True
     except ImportError:
         logger.warning("Could not import STK COM types for satellite creation (Windows only feature).")
     except Exception as e:
-        logger.error("Error importing win32com or STK enums: %s", e)
+        logger.error("Error importing STK enums: %s", e)
 
 
 cfg = get_config()
@@ -56,8 +53,8 @@ def create_satellite_internal(
         ValueError: If input parameters are invalid (e.g., apogee < perigee).
         Exception: For COM or other STK errors.
     """
-    if not core.stk_available or not scenario or win32com_client is None or not satellite_capable:
-        raise RuntimeError("STK modules, active scenario, or win32com not available/initialized.")
+    if not core.stk_available or not scenario or not satellite_capable:
+        raise RuntimeError("STK modules or active scenario not available/initialized.")
     if AgESTKObjectType is None or AgEVePropagatorType is None or AgEClassicalLocation is None:
         raise RuntimeError("Required STK Object Enums not imported.")
 
@@ -92,11 +89,10 @@ def create_satellite_internal(
     # --- Set Propagator to TwoBody ---
     logger.info("    Setting propagator to TwoBody...")
     satellite.SetPropagatorType(AgEVePropagatorType.ePropagatorTwoBody)
-    propagator = satellite.Propagator
-
-    propagator_twobody = win32com_client.CastTo(propagator, "IAgVePropagatorTwoBody")
-    if propagator_twobody is None:
-        raise Exception("Failed to cast propagator to IAgVePropagatorTwoBody.")
+    
+    # In the new STK API, interfaces are directly accessible at runtime.
+    # We do not need to cast 'satellite.Propagator' to 'IAgVePropagatorTwoBody'.
+    propagator_twobody = satellite.Propagator
 
     # --- Define Orbital Elements ---
     argp_deg = 0.0 # Assumed
@@ -105,8 +101,9 @@ def create_satellite_internal(
     logger.info("    Assigning Classical Elements (J2000):")
     # (Print statements omitted for brevity, add back if desired)
 
+    # Similarly, we access the interface directly.
     orbit_state = propagator_twobody.InitialState.Representation
-    classical_elements = win32com_client.CastTo(orbit_state, "IAgOrbitStateClassical")
+    classical_elements = orbit_state
 
     if classical_elements:
         classical_elements.AssignClassical(
@@ -115,7 +112,7 @@ def create_satellite_internal(
             argp_deg, raan_deg, true_anom_deg
         )
     else:
-        raise Exception("Failed to cast orbit state to IAgOrbitStateClassical.")
+        raise Exception("Failed to access orbit state representation.")
 
     # --- Propagate the Orbit ---
     logger.info("    Propagating orbit...")

@@ -52,9 +52,6 @@ The MCP application, defined in `src/stk_mcp/app.py`, exposes STK operations as 
     ```bash
     uv add ./agi.stk12-12.10.0-py3-none-any.whl
     # or: uv add path/to/your/STK/CodeSamples/Automation/Python/agi.stk12-*.whl
-    
-    # Windows only: COM bridge for Desktop automation
-    uv add "pywin32; platform_system == 'Windows'"
     ```
 4.  Sync the environment (installs deps from `pyproject.toml`)
     ```bash
@@ -117,9 +114,6 @@ The server exposes the following MCP tools/resources.
 | `create_location`| Tool     | Create/update a `Facility` (default) or `Place` at latitude/longitude/altitude (km).         | Yes               | Yes              | Yes            |
 | `create_satellite`| Tool    | Create/configure a satellite from apogee/perigee (km), RAAN, and inclination; TwoBody prop.  | Yes               | Yes              | No             |
 
-Notes:
-- `create_satellite` on Linux Engine is not yet supported because it relies on COM-specific casts; a Connect-based fallback is planned.
-
 Resources:
 
 | Name | Kind | Description | Desktop (Windows) | Engine (Windows) | Engine (Linux) |
@@ -175,11 +169,10 @@ Managed with `uv`:
 *   `rich>=13.7` (CLI table output)
 *   `typer>=0.15.2`
 *   `pydantic>=2.11.7`
-*   `pywin32` (Windows only)
 
 Notes:
 - On macOS (Darwin), STK Engine/Desktop are not supported. The server will start but STK-dependent tools/resources are unavailable.
-- The server serializes STK access via a global lock to avoid concurrency issues with COM/Engine calls.
+- The server serializes STK access via a global lock to avoid concurrency issues with multi-threaded access to the STK Engine/Desktop instance.
 
 ## Contributing
 

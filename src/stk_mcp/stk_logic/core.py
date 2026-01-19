@@ -137,7 +137,7 @@ def create_stk_lifespan(mode: StkMode):
             logger.info("MCP Server Shutdown: Cleaning up STK (%s mode)...", mode.value)
             if state.stk_app:
                 try:
-                    state.stk_app.Close()
+                    state.stk_app.ShutDown()
                     logger.info("   STK Application/Engine Closed.")
                 except Exception as quit_e:
                     logger.warning("   Error closing STK: %s", quit_e)
